@@ -1,5 +1,6 @@
 package com.marv.blog.config;
 
+import com.marv.blog.domain.entities.User;
 import com.marv.blog.domain.repositories.UserRepository;
 import com.marv.blog.security.BlogUserDetailsService;
 import com.marv.blog.security.JwtAuthenticationFilter;
@@ -27,7 +28,20 @@ public class SecurityConfig {
 
     @Bean
     public UserDetailsService userDetailsService(UserRepository userRepository) {
-        return new BlogUserDetailsService(userRepository);
+        BlogUserDetailsService blogUserDetailsService = new BlogUserDetailsService(userRepository);
+
+        String email = "user@test.com";
+        userRepository.findByEmail(email).orElseGet(() -> {
+            User newUser = User.builder()
+                    .name("Test User")
+                    .email(email)
+                    .password(passwordEncoder().encode("password"))
+                    .build();
+           return userRepository.save(newUser);
+        });
+
+        return blogUserDetailsService;
+
     }
 
     @Bean
@@ -37,7 +51,7 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(auth-> auth
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/tags/**").permitAll()
