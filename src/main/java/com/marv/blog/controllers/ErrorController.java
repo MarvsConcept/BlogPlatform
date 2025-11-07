@@ -46,7 +46,7 @@ public class ErrorController {
     public ResponseEntity<ApiErrorResponse> handleIllegalStateException(BadCredentialsException ex) {
         ApiErrorResponse error = ApiErrorResponse.builder()
                 .status(HttpStatus.UNAUTHORIZED.value())
-                .message("Incorrect username of password")
+                .message("Incorrect username or password")
                 .build();
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
