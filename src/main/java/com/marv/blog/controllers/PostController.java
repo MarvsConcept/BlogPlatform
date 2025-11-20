@@ -1,10 +1,18 @@
 package com.marv.blog.controllers;
 
+import com.marv.blog.domain.CreatePostRequest;
+import com.marv.blog.domain.UpdatePostRequest;
+import com.marv.blog.domain.dtos.CreatePostRequestDto;
 import com.marv.blog.domain.dtos.PostDto;
+import com.marv.blog.domain.dtos.UpdatePostRequestDto;
 import com.marv.blog.domain.entities.Post;
+import com.marv.blog.domain.entities.User;
 import com.marv.blog.mappers.PostMapper;
 import com.marv.blog.services.PostService;
+import com.marv.blog.services.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +26,8 @@ public class PostController {
 
     private final PostService postService;
     private final PostMapper postMapper;
+    private final UserService userService;
+
 
     @GetMapping
     public ResponseEntity<List<PostDto>> getAllPosts(
@@ -28,4 +38,48 @@ public class PostController {
         return ResponseEntity.ok(postDtos);
     }
 
+    @GetMapping(path = "/drafts")
+    public ResponseEntity<List<PostDto>> getDraft(@RequestAttribute UUID userId) {
+        User loggedInUser = userService.getUserById(userId);
+        List<Post> draftPosts = postService.getDraftPosts(loggedInUser);
+        List<PostDto> postDtos = draftPosts.stream().map(postMapper::toDto).toList();
+        return ResponseEntity.ok(postDtos);
+    }
+
+    @PostMapping
+    public ResponseEntity<PostDto> createPost(
+            @Valid @RequestBody CreatePostRequestDto createPostRequestDto,
+            @RequestAttribute UUID userId) {
+        User loggedInUser = userService.getUserById(userId);
+        CreatePostRequest createPostRequest = postMapper.toCreatePostRequest(createPostRequestDto);
+        Post createdPost = postService.createPost(loggedInUser, createPostRequest);
+        PostDto  createdPostDto = postMapper.toDto(createdPost);
+        return new ResponseEntity<>(createdPostDto, HttpStatus.CREATED);
+    }
+
+    @PutMapping(path = "/{id}")
+    public ResponseEntity<PostDto> updatePost(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdatePostRequestDto updatePostRequestDto) {
+        UpdatePostRequest updatePostRequest = postMapper.toUpdatePostRequest(updatePostRequestDto);
+        Post updatePost = postService.updatePost(id, updatePostRequest);
+        PostDto updatePostDto = postMapper.toDto(updatePost);
+        return ResponseEntity.ok(updatePostDto);
+    }
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
